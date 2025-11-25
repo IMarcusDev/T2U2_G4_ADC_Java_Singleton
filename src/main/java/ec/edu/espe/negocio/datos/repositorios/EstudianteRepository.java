@@ -1,8 +1,10 @@
-package main.java.ec.edu.espe.modelo.datos.repositorios;
+package main.java.ec.edu.espe.negocio.datos.repositorios;
 
 import java.util.ArrayList;
 import java.util.List;
-import main.java.ec.edu.espe.modelo.datos.entidades.Estudiante;
+
+import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
+
 
 
 

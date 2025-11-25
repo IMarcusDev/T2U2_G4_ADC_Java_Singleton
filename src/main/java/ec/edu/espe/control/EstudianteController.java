@@ -1,8 +1,9 @@
 package main.java.ec.edu.espe.control;
 
 import java.util.List;
-import main.java.ec.edu.espe.modelo.datos.entidades.Estudiante;
-import main.java.ec.edu.espe.modelo.logica_negocio.EstudianteService;
+import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
+import main.java.ec.edu.espe.negocio.logica_negocio.EstudianteService;
+
 
 
 

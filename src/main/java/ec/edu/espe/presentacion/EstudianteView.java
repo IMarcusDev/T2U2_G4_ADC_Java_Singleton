@@ -6,7 +6,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 import main.java.ec.edu.espe.control.EstudianteController;
-import main.java.ec.edu.espe.modelo.datos.entidades.Estudiante;
+import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
+
 
 
 public final class EstudianteView extends JFrame {

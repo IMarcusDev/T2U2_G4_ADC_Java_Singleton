@@ -1,9 +1,9 @@
-package main.java.ec.edu.espe.modelo.logica_negocio;
+package main.java.ec.edu.espe.negocio.logica_negocio;
 
 import java.util.List;
 import java.util.regex.Pattern;
-import main.java.ec.edu.espe.modelo.datos.entidades.Estudiante;
-import main.java.ec.edu.espe.modelo.datos.repositorios.EstudianteRepository;
+import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
+import main.java.ec.edu.espe.negocio.datos.repositorios.EstudianteRepository;
 
 
 public class EstudianteService {

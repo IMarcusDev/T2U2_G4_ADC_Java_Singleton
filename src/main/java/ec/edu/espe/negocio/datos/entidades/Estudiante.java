@@ -1,4 +1,4 @@
-package main.java.ec.edu.espe.modelo.datos.entidades;
+package main.java.ec.edu.espe.negocio.datos.entidades;
 
 public class Estudiante {
     private String id;
