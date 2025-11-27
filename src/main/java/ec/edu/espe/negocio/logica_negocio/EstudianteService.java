@@ -1,26 +1,35 @@
 package main.java.ec.edu.espe.negocio.logica_negocio;
 
 import java.util.List;
-import java.util.regex.Pattern;
 import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
 import main.java.ec.edu.espe.negocio.datos.repositorios.EstudianteRepository;
-
+import main.java.ec.edu.espe.negocio.logica_negocio.validaciones.ValidacionEstandar;
+import main.java.ec.edu.espe.negocio.logica_negocio.validaciones.ValidacionStrategy;
 
 public class EstudianteService {
     private final EstudianteRepository repo = EstudianteRepository.getInstance();
-    
-    private final Pattern validNameRegex = Pattern.compile("^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$");
+    private ValidacionStrategy estrategiaValidacion;
+
+    public EstudianteService() {
+        this.estrategiaValidacion = new ValidacionEstandar();
+    }
+
+    public void setEstrategiaValidacion(ValidacionStrategy estrategia) {
+        this.estrategiaValidacion = estrategia;
+    }
 
     public void agregarEstudiante(String name, String age) throws Exception {
-        validarNombre(name);
-        int validAge = validarEdad(age);
+        estrategiaValidacion.validar(name, age);
+        
         String id = String.valueOf(System.nanoTime());
+        int validAge = Integer.parseInt(age);
         repo.addEstudiante(new Estudiante(id, name, validAge));
     }
 
     public void modificarEstudiante(String id, String name, String age) throws Exception {
-        validarNombre(name);
-        int validAge = validarEdad(age);
+        estrategiaValidacion.validar(name, age);
+        
+        int validAge = Integer.parseInt(age);
         repo.updateEstudiante(new Estudiante(id, name, validAge));
     }
 
@@ -30,20 +39,5 @@ public class EstudianteService {
 
     public List<Estudiante> obtenerLista() {
         return repo.listEstudiantes();
-    }
-
-    private void validarNombre(String name) throws Exception {
-        if (name == null || name.trim().isEmpty()) throw new Exception("El nombre no puede estar vacío");
-        if (!validNameRegex.matcher(name).matches()) throw new Exception("El nombre solo letras");
-    }
-
-    private int validarEdad(String age) throws Exception {
-        try {
-            int estAge = Integer.parseInt(age);
-            if (estAge < 0 || estAge > 100) throw new Exception("Edad entre 0 y 100");
-            return estAge;
-        } catch (NumberFormatException e) {
-            throw new Exception("La edad debe ser número");
-        }
     }
 }

@@ -1,18 +1,33 @@
 package main.java.ec.edu.espe.presentacion;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-
+import javax.swing.table.JTableHeader;
 import main.java.ec.edu.espe.control.EstudianteController;
 import main.java.ec.edu.espe.negocio.datos.entidades.Estudiante;
+import main.java.ec.edu.espe.negocio.datos.repositorios.EstudianteRepository;
+import main.java.ec.edu.espe.negocio.datos.repositorios.ObserverRepository;
 
 
-
-public final class EstudianteView extends JFrame {
+public final class EstudianteView extends JFrame implements ObserverRepository {
     private final EstudianteController controller;
     
+    // Paleta de Colores Minimalista
+    private final Color COLOR_PRIMARY = new Color(0, 150, 136); // Teal Moderno
+    private final Color COLOR_SECONDARY = new Color(52, 73, 94); // Azul Oscuro
+    private final Color COLOR_BG = new Color(245, 245, 245); // Gris muy claro
+    private final Color COLOR_WHITE = Color.WHITE;
+    private final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 24);
+    private final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 14);
+    private final Font FONT_BOLD = new Font("Segoe UI", Font.BOLD, 14);
+
     private String estudianteId = null;
     private JTextField txtNombre, txtEdad;
     private DefaultTableModel tableModel;
@@ -20,76 +35,187 @@ public final class EstudianteView extends JFrame {
 
     public EstudianteView() {
         this.controller = new EstudianteController();
-        
+
         initComponents();
-        refreshTable();
+
+        SwingUtilities.invokeLater(() -> {
+            EstudianteRepository.getInstance().agregarObservador(this);
+            refreshTable();
+        });
     }
 
     private void initComponents() {
-        setTitle("Patrón Singleton + NVC");
-        setSize(600, 600);
+        setTitle("Gestión de Estudiantes");
+        setSize(850, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout());
 
-        // Header
-        JPanel header = new JPanel();
-        header.setBackground(new Color(0, 121, 107));
-        JLabel title = new JLabel("Gestión Estudiantes (NVC)");
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 18));
-        header.add(title);
-        add(header, BorderLayout.NORTH);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                EstudianteRepository.getInstance().eliminarObservador(EstudianteView.this);
+            }
+        });
 
-        // Body
-        JPanel body = new JPanel();
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        
-        // Formulario
-        JPanel form = new JPanel(new GridLayout(3, 2, 5, 5));
-        form.setBorder(BorderFactory.createTitledBorder("Datos"));
-        txtNombre = new JTextField();
-        txtEdad = new JTextField();
-        JButton btnGuardar = new JButton("Guardar");
+        JPanel headerPanel = new JPanel();
+        headerPanel.setBackground(COLOR_PRIMARY);
+        headerPanel.setPreferredSize(new Dimension(getWidth(), 80));
+        headerPanel.setLayout(new GridBagLayout());
+
+        JLabel titleLabel = new JLabel("Registro Académico");
+        titleLabel.setFont(FONT_TITLE);
+        titleLabel.setForeground(COLOR_WHITE);
+        titleLabel.setIconTextGap(15);
+        headerPanel.add(titleLabel);
+
+        add(headerPanel, BorderLayout.NORTH);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+        mainPanel.setBackground(COLOR_BG);
+        mainPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(COLOR_WHITE);
+        formPanel.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(230, 230, 230), 1, true),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
+        formPanel.setPreferredSize(new Dimension(300, 0));
+
+        JLabel lblForm = new JLabel("Datos del Estudiante");
+        lblForm.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblForm.setForeground(COLOR_SECONDARY);
+        lblForm.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formPanel.add(lblForm);
+        formPanel.add(Box.createVerticalStrut(20));
+
+        formPanel.add(crearLabel("Nombre Completo:"));
+        txtNombre = crearTextField();
+        formPanel.add(txtNombre);
+        formPanel.add(Box.createVerticalStrut(15));
+
+        formPanel.add(crearLabel("Edad:"));
+        txtEdad = crearTextField();
+        formPanel.add(txtEdad);
+        formPanel.add(Box.createVerticalStrut(25));
+
+        JButton btnGuardar = crearBoton("Guardar Estudiante", COLOR_PRIMARY, COLOR_WHITE);
         btnGuardar.addActionListener(e -> guardar());
+        formPanel.add(btnGuardar);
 
-        form.add(new JLabel("Nombre:")); form.add(txtNombre);
-        form.add(new JLabel("Edad:"));   form.add(txtEdad);
-        form.add(new JLabel(""));        form.add(btnGuardar);
-        body.add(form);
+        formPanel.add(Box.createVerticalStrut(10));
+        JButton btnLimpiar = crearBoton("Limpiar Formulario", new Color(224, 224, 224), Color.DARK_GRAY);
+        btnLimpiar.addActionListener(e -> limpiarFormulario());
+        formPanel.add(btnLimpiar);
 
-        // Tabla
-        String[] cols = {"ID", "Nombre", "Edad"};
-        tableModel = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+        formPanel.add(Box.createVerticalGlue()); 
+
+        mainPanel.add(formPanel, BorderLayout.WEST);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 15));
+        centerPanel.setBackground(COLOR_BG);
+
+        String[] columnNames = {"ID", "Nombre", "Edad"};
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         table = new JTable(tableModel);
-        body.add(new JScrollPane(table));
+        estilizarTabla(table);
+        
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(COLOR_WHITE);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel actions = new JPanel();
-        JButton btnEditar = new JButton("Editar");
-        JButton btnBorrar = new JButton("Borrar");
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setBackground(COLOR_BG);
 
-        JButton btnNuevaVentana = new JButton("Abrir Nueva Ventana (Test Singleton)");
-        btnNuevaVentana.setBackground(Color.CYAN);
+        JButton btnNuevaVentana = crearBoton("Nueva Ventana", COLOR_SECONDARY, COLOR_WHITE);
+        JButton btnEditar = crearBoton("Editar", new Color(255, 152, 0), COLOR_WHITE); 
+        JButton btnBorrar = crearBoton("Eliminar", new Color(244, 67, 54), COLOR_WHITE); 
 
-        JButton btnRefrescar = new JButton("Recargar lista");
-        btnRefrescar.setBackground(Color.GREEN);
-
-        btnEditar.addActionListener(e -> cargarEdicion());
-        btnBorrar.addActionListener(e -> borrar());
         btnNuevaVentana.addActionListener(e -> {
             SwingUtilities.invokeLater(() -> new EstudianteView().setVisible(true));
         });
-        btnRefrescar.addActionListener(e -> refreshTable());
+        btnEditar.addActionListener(e -> cargarEdicion());
+        btnBorrar.addActionListener(e -> borrar());
 
-        actions.add(btnEditar);
-        actions.add(btnBorrar);
-        actions.add(btnNuevaVentana);
-        actions.add(btnRefrescar);
-        body.add(actions);
+        actionPanel.add(btnNuevaVentana);
+        actionPanel.add(btnEditar);
+        actionPanel.add(btnBorrar);
 
-        add(body, BorderLayout.CENTER);
+        centerPanel.add(actionPanel, BorderLayout.SOUTH);
+
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private JLabel crearLabel(String texto) {
+        JLabel label = new JLabel(texto);
+        label.setFont(FONT_BOLD);
+        label.setForeground(Color.GRAY);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private JTextField crearTextField() {
+        JTextField field = new JTextField();
+        field.setFont(FONT_BODY);
+        field.setPreferredSize(new Dimension(100, 35));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(200, 200, 200)), 
+            new EmptyBorder(5, 10, 5, 10)
+        ));
+        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return field;
+    }
+
+    private JButton crearBoton(String texto, Color bg, Color fg) {
+        JButton btn = new JButton(texto);
+        btn.setFont(FONT_BOLD);
+        btn.setBackground(bg);
+        btn.setForeground(fg);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setPreferredSize(new Dimension(250, 40));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent evt) {
+                btn.setBackground(bg.darker());
+            }
+            @Override
+            public void mouseExited(MouseEvent evt) {
+                btn.setBackground(bg);
+            }
+        });
+        return btn;
+    }
+
+    private void estilizarTabla(JTable table) {
+        table.setRowHeight(30); 
+        table.setFont(FONT_BODY);
+        table.setShowVerticalLines(false); 
+        table.setGridColor(new Color(230, 230, 230));
+        table.setSelectionBackground(new Color(232, 245, 233)); 
+        table.setSelectionForeground(Color.BLACK);
+        JTableHeader header = table.getTableHeader();
+        header.setFont(FONT_BOLD);
+        header.setBackground(COLOR_WHITE);
+        header.setForeground(COLOR_SECONDARY);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, COLOR_PRIMARY));
+        ((DefaultTableCellRenderer)header.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
+    }
+
+    @Override
+    public void actualizarDatos() {
+        refreshTable();
     }
 
     private void guardar() {
@@ -100,11 +226,10 @@ public final class EstudianteView extends JFrame {
                 controller.editar(estudianteId, txtNombre.getText(), txtEdad.getText());
                 estudianteId = null;
             }
-            txtNombre.setText(""); txtEdad.setText("");
-            refreshTable();
-            JOptionPane.showMessageDialog(this, "Guardado con éxito");
+            limpiarFormulario();
+            JOptionPane.showMessageDialog(this, "Operación realizada con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage());
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -114,29 +239,37 @@ public final class EstudianteView extends JFrame {
             estudianteId = (String) tableModel.getValueAt(row, 0);
             txtNombre.setText((String) tableModel.getValueAt(row, 1));
             txtEdad.setText(tableModel.getValueAt(row, 2).toString());
+        } else {
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante para editar.");
         }
     }
 
     private void borrar() {
         int row = table.getSelectedRow();
         if (row >= 0) {
-            String id = (String) tableModel.getValueAt(row, 0);
-            controller.eliminar(id);
-            refreshTable();
+            int opt = JOptionPane.showConfirmDialog(this, "¿Seguro que desea eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION);
+            if (opt == JOptionPane.YES_OPTION) {
+                String id = (String) tableModel.getValueAt(row, 0);
+                controller.eliminar(id);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Seleccione un estudiante para borrar.");
         }
+    }
+    
+    private void limpiarFormulario() {
+        estudianteId = null;
+        txtNombre.setText("");
+        txtEdad.setText("");
     }
 
     public void refreshTable() {
-        tableModel.setRowCount(0);
-        List<Estudiante> lista = controller.listar();
-        for (Estudiante e : lista) {
-            tableModel.addRow(new Object[]{e.getId(), e.getNombres(), e.getEdad()});
-        }
-    }
-
-    @Override
-    public void setVisible(boolean b) {
-        super.setVisible(b);
-        if (b) refreshTable();
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+            List<Estudiante> lista = controller.listar();
+            for (Estudiante e : lista) {
+                tableModel.addRow(new Object[]{e.getId(), e.getNombres(), e.getEdad()});
+            }
+        });
     }
 }
